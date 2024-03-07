@@ -1,0 +1,36 @@
+-- Trigger para actualizar el stock de productos después de un nuevo pedido
+DELIMITER $$
+CREATE TRIGGER actualizar_stock_productos
+AFTER INSERT ON detalle_pedido
+FOR EACH ROW
+BEGIN
+    UPDATE producto
+    SET existencias_producto = existencias_producto - NEW.cantidad_producto
+    WHERE id_producto = NEW.id_producto;
+END$$
+DELIMITER ;
+
+-- Función para calcular el total de un pedido
+DELIMITER $$
+CREATE FUNCTION calcular_total_pedido(id_pedido_param INT)
+RETURNS DECIMAL(10,2)
+DETERMINISTIC
+BEGIN
+    DECLARE total DECIMAL(10,2);
+    SELECT SUM(dp.cantidad_producto * dp.precio_producto) INTO total
+    FROM detalle_pedido dp
+    WHERE dp.id_pedido = id_pedido_param;
+    RETURN total;
+END$$
+DELIMITER ;
+
+-- Procedimiento almacenado para obtener pedidos por estado
+DELIMITER $$
+CREATE PROCEDURE obtener_pedidos_por_estado(estado_pedido_param VARCHAR(20))
+BEGIN
+    SELECT p.id_pedido, c.nombre_cliente, c.apellido_cliente, p.direccion_pedido, p.estado_pedido, p.fecha_registro
+    FROM pedido p
+    JOIN cliente c ON p.id_cliente = c.id_cliente
+    WHERE p.estado_pedido = estado_pedido_param;
+END$$
+DELIMITER ;
